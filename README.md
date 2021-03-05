@@ -4,7 +4,7 @@
 
 - まずPhoton Realtime SDKを[ダウンロード](https://www.photonengine.com/ja/sdks#realtime-windows-cpp-sdkrealtimewindows)してください。
 
-- このリポジトリをクローンし、Visual Studio 2019で開きます。
+- このリポジトリをクローンし、Visual Studio 2019で開きます。その際、App/engine, App/example, App/nlpを外してますのでデフォルトのOpenSiv3Dプロジェクトからこの3つのフォルダを追加してください。
 
 - [この記事](https://qiita.com/makia/items/843eedb37eaf562e122c)を参考に、プロパティの部分を変更します。
 
