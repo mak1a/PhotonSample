@@ -536,7 +536,7 @@ void Main() {
     s3d::FontAsset::Register(U"Menu", 30, s3d::Typeface::Regular);
 
     // シーンと遷移時の色を設定
-    MyScene manager(L"/*ここにPhotonのappIDを入力してください。*/", L"1.0");
+    MyScene manager(L"/*ここを自分のappIDに変更してください*/", L"1.0");
 
     manager.add<Sample::Title>(Common::Scene::Title)
         .add<Sample::Match>(Common::Scene::Match)

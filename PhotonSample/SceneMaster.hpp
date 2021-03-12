@@ -91,6 +91,8 @@ namespace Utility {
 
         virtual void ServerErrorReturn(int /*errorCode*/) {}
 
+        virtual void OnMasterClientChanged(int /*id*/, int /*oldID*/) {}
+
         virtual void JoinRoomEventAction(int /*playerNr*/, const ExitGames::Common::JVector<int>& /*playernrs*/, const ExitGames::LoadBalancing::Player& /*player*/) {}
 
         virtual void LeaveRoomEventAction(int /*playerNr*/, bool /*isInactive*/) {}
@@ -121,7 +123,9 @@ namespace Utility {
     public:
         explicit IScene(const InitData& init) : m_state(init.state), m_data(init._s), m_manager(init._m) {}
 
-        virtual void Connect() {
+        virtual ~IScene() {}
+
+        void Connect() {
             m_manager->GetClient().setAutoJoinLobby(true);
 
             if (!m_manager->GetClient().connect(ExitGames::LoadBalancing::AuthenticationValues().setUserID(ExitGames::Common::JString() + GETTIMEMS()))) {
@@ -131,11 +135,13 @@ namespace Utility {
             m_manager->UsePhoton(true);
         }
 
-        virtual void Disconnect() {
+        void Disconnect() {
             m_manager->GetClient().disconnect();
         }
 
-        virtual ~IScene() {}
+        [[nodiscard]] bool IsConnectingPhoton() const noexcept {
+            return m_manager->IsConnectingPhoton();
+        }
 
         virtual void UpdatePhoton() {}
 
@@ -338,7 +344,9 @@ namespace Utility {
 
         bool m_error = false;
 
-        bool m_usePhoton;
+        bool m_usePhoton = false;
+
+        bool m_isConnectingPhoton = false;
 
         ExitGames::LoadBalancing::Client m_loadBalancingClient;
 
@@ -443,7 +451,7 @@ namespace Utility {
         /// シーン管理のオプション
         /// </param>
         SceneMaster(const ExitGames::Common::JString& appID_, const ExitGames::Common::JString& appVersion_)
-        : m_data(s3d::MakeShared<Data>()), m_loadBalancingClient(*this, appID_, appVersion_), m_usePhoton(false) {}
+        : m_data(s3d::MakeShared<Data>()), m_loadBalancingClient(*this, appID_, appVersion_), m_usePhoton(false), m_isConnectingPhoton(false) {}
 
         /// <summary>
         /// シーン管理を初期化します。
@@ -455,7 +463,7 @@ namespace Utility {
         /// シーン管理のオプション
         /// </param>
         explicit SceneMaster(const std::shared_ptr<Data>& data, const ExitGames::Common::JString& appID_, const ExitGames::Common::JString& appVersion_)
-        : m_data(data), m_loadBalancingClient(*this, appID_, appVersion_), m_usePhoton(false) {}
+        : m_data(data), m_loadBalancingClient(*this, appID_, appVersion_), m_usePhoton(false), m_isConnectingPhoton(false) {}
 
         ~SceneMaster() {
             if (UsePhoton()) {
@@ -463,11 +471,15 @@ namespace Utility {
             }
         }
 
-        bool UsePhoton() {
+        [[nodiscard]] bool UsePhoton() const noexcept {
             return m_usePhoton;
         }
         void UsePhoton(const bool use_) {
             m_usePhoton = use_;
+        }
+
+        [[nodiscard]] bool IsConnectingPhoton() const noexcept {
+            return m_isConnectingPhoton;
         }
 
         /// <summary>
@@ -752,6 +764,10 @@ namespace Utility {
             m_current->ServerErrorReturn(errorCode);
         }
 
+        virtual void onMasterClientChanged(int id, int oldID) override {
+            m_current->OnMasterClientChanged(id, oldID);
+        }
+
         virtual void joinRoomEventAction(int playerNr, const ExitGames::Common::JVector<int>& playernrs, const ExitGames::LoadBalancing::Player& player) override {
             m_current->JoinRoomEventAction(playerNr, playernrs, player);
         }
@@ -768,12 +784,14 @@ namespace Utility {
                                    const ExitGames::Common::JString& errorString,
                                    const ExitGames::Common::JString& region,
                                    const ExitGames::Common::JString& cluster) override {
+            m_isConnectingPhoton = true;
             m_current->ConnectReturn(errorCode, errorString, region, cluster);
         }
 
         virtual void disconnectReturn() override {
-            m_current->DisconnectReturn();
+            m_isConnectingPhoton = false;
             m_usePhoton = false;
+            m_current->DisconnectReturn();
         }
 
         virtual void leaveRoomReturn(int errorCode, const ExitGames::Common::JString& errorString) override {
